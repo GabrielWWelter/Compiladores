@@ -57,7 +57,7 @@ int ast_count_nodes(const ast_node_t *node)
         count += ast_count_nodes(node->children[i]);
 
     /* TODO-E: adicione aqui a contagem recursiva via 'next' */
-    /* count += ast_count_nodes(node->next); */  /* <-- descomente e ajuste */
+    count += ast_count_nodes(node->next);  /* <-- descomente e ajuste */
 
     return count;
 }
@@ -73,8 +73,38 @@ int ast_count_nodes(const ast_node_t *node)
 int ast_count_leaves(const ast_node_t *node)
 {
     /* TODO-F: implementar */
-    (void)node;  /* evita warning de parâmetro não usado — remova ao implementar */
-    return 0;
+    
+    /* profundidade de árvore vazia é 0 */
+    if(node == NULL)
+        return 0; 
+
+    /* Se o nó é uma folha, a profundidade é 0 */
+    int leaf = 1;
+    for(int i = 0; i < AST_MAX_CHILDREN; i++)
+    {
+        if(node->children[i] != NULL)
+        {
+            leaf = 0;
+            break;
+        }
+    }
+
+    /* Se o nó tem um próximo, não é uma folha */
+    if (node->next != NULL)
+        leaf = 0;
+
+    int count = 0;  
+    if(leaf) count++;  /* conta este nó como folha */
+
+    /* Percorre todos os filhos */
+    for (int i = 0; i < AST_MAX_CHILDREN; i++)
+    {
+        count += ast_count_leaves(node->children[i]);
+    }
+
+    /* vai pro próximo nó */
+    count += ast_count_leaves(node->next);
+    return count;
 }
 
 /* -----------------------------------------------------------------------
@@ -93,9 +123,23 @@ static int max(int a, int b) { return (a > b) ? a : b; }
 int ast_max_depth(const ast_node_t *node)
 {
     /* TODO-G: implementar */
-    (void)node;
-    (void)max;   /* evita warning — remova ao implementar */
-    return 0;
+
+    /* profundidade de árvore vazia é -1 */
+    if (node == NULL)
+        return -1;
+
+    int max_depth = 0;
+    
+    /* Percorre todos os filhos */
+    for (int i = 0; i < AST_MAX_CHILDREN; i++)
+    {
+        max_depth = max(max_depth, 1 + ast_max_depth(node->children[i]));
+
+    }
+
+    /* Percorre o próximo nó no mesmo nível */
+    max_depth = max(max_depth, ast_max_depth(node->next));  
+    return max_depth;
 }
 
 /* -----------------------------------------------------------------------
