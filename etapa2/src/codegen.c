@@ -129,11 +129,48 @@ void codegen_program(codegen_ctx_t *ctx, ast_node_t *program)
      */
 
     /* Código parcial fornecido como exemplo — processa apenas funções */
-    while (decl) {
-        if (decl->type == AST_FUN_DECL) {
+    
+    int global_offset = 0;
+    char size_str[16];
+    int size = 0;
+    while (decl)
+    {
+
+        /**
+         * Constatações importantes while:
+         *  1) Não executa nenhuma das ações caso o retorno da entrada seja NULL
+         *  2) As variáveis foram declaradas fora do laço para melhorar o uso de memória
+         *  3) Uso de char[16] e snprintf como usado em demais funções como `codegen_stmt`
+         *  4) Tamanho do array = tipo do array * tamanho do array
+         */
+
+        if (decl->type == AST_FUN_DECL)
+        {
             codegen_fun(ctx, decl);
         }
-        /* TODO-E2-A: adicione tratamento para AST_VAR_DECL e AST_ARRAY_DECL */
+        else
+        {
+            sym_entry_t *e = symtab_lookup(ctx->symtab, decl->value);
+            if (e)
+            {
+                e->scope = SYM_SCOPE_GLOBAL;
+                e->offset = global_offset;
+                if (decl->type == AST_VAR_DECL)
+                {
+                    size = type_size(e->datatype);
+                    global_offset += size;
+                    snprintf(size_str, sizeof(size_str), "%d", size);
+                    codegen_emit(ctx, TAC_DECL_GLOBAL, decl->value, size_str, NULL);
+                }
+                else if (decl->type == AST_ARRAY_DECL)
+                {
+                    size = type_size(e->datatype) * e->array_size;
+                    global_offset += size;
+                    snprintf(size_str, sizeof(size_str), "%d", size);
+                    codegen_emit(ctx, TAC_DECL_GLOBAL, decl->value, size_str, NULL);
+                }
+            }
+        }
         decl = decl->next;
     }
 }
