@@ -273,8 +273,29 @@ void codegen_stmt(codegen_ctx_t *ctx, ast_node_t *stmt)
          */
         case AST_ASSIGN: {
             if (strcmp(stmt->value, ":=") == 0) {
-                /* TODO-E2-D: implemente aqui */
-                fprintf(stderr, "[CODEGEN] TODO-E2-D: atribuição não implementada ainda.\n");
+                /* destino */
+                ast_node_t *lhs = stmt->children[0];
+
+                /* Gera o resultado do lado direito da expressão*/
+                char *rval = codegen_expr(ctx, stmt->children[1]);
+
+                /* Se a expressão for um array*/
+                if (lhs->type == AST_EXPR_INDEX) {
+                    
+                    /* Pega o índice e gera a instrução que grava no array*/
+                    char *idx = codegen_expr(ctx, lhs->children[0]);
+                    codegen_emit(ctx, TAC_STORE, lhs->value, idx, rval);
+
+                    /* Limpa o índice calculado*/
+                    free(idx);
+
+                } else {
+                    /* Gera a instrução que grava o valor na variável*/
+                    codegen_emit(ctx, TAC_COPY, lhs->value, rval, NULL);
+                }
+
+                /* Limpa o valor retornado da expressão do lado direito */
+                free(rval);
             } else if (strcmp(stmt->value, "+=") == 0) {
                 /* compound assignment += */
                 char *lname = stmt->children[0]->value;
@@ -417,10 +438,7 @@ char *codegen_expr(codegen_ctx_t *ctx, ast_node_t *expr)
              * (placeholder). Substitua pela emissão correta.
              */
             if (op != TAC_NOP) {
-                /* TODO-E2-B e TODO-E2-C: substitua a linha abaixo */
                 codegen_emit(ctx, op, tmp, left, right);
-                /* pela linha correta: */
-                /* codegen_emit(ctx, op, tmp, left, right); */
             } else {
                 fprintf(stderr, "[CODEGEN] Operador desconhecido: '%s'\n", expr->value);
                 codegen_emit(ctx, TAC_NOP, tmp, left, right);
